@@ -1,28 +1,25 @@
-# InnovaTechShop - Ecommerce basico en Laravel
+# InnovaTechShop - Sistema Ecommerce basico en Laravel
 
 ## Introduccion
 
-**InnovaTechShop** es una practica de desarrollo web orientada a construir un sistema ecommerce basico con Laravel, MySQL, Blade, Tailwind CSS, Eloquent, middleware, autenticacion y pruebas automatizadas con PHPUnit.
+**InnovaTechShop** es un ecommerce basico desarrollado con Laravel para aplicar conocimientos de frameworks web, MVC, Eloquent ORM, autenticacion, autorizacion por roles, manejo de archivos estaticos, carrito de compras, checkout simulado y pruebas automatizadas con PHPUnit.
 
-El objetivo del proyecto es aplicar buenas practicas de frameworks web en un caso real: catalogo de productos, administracion de inventario, autenticacion de usuarios, roles, carrito de compras, checkout simulado, base de datos relacional, seeders, factories y tests siguiendo el patron AAA: **Arrange, Act, Assert**.
-
-> Estado del repositorio: el proyecto parte de una instalacion Laravel y este documento describe la arquitectura, modulos y codigo clave que se desarrollan para cumplir los requisitos de la practica.
+El sistema permite navegar un catalogo de productos tecnologicos, filtrar por categoria o etiqueta, consultar el detalle de cada producto, agregar productos al carrito y completar una compra simulada. Tambien incluye un panel administrativo protegido para gestionar productos.
 
 ## Tecnologias utilizadas
 
-- **Laravel 13** como framework principal.
-- **PHP 8.3** para la logica de backend.
-- **MySQL** como motor de base de datos.
-- **Eloquent ORM** para modelos y relaciones.
-- **Blade** para vistas reutilizables.
-- **Tailwind CSS** para estilos del catalogo y componentes.
-- **Laravel Breeze o autenticacion nativa** para registro e inicio de sesion.
-- **PHPUnit** para pruebas unitarias y feature.
-- **Git y GitHub** para control de versiones, ramas y pull requests.
+- Laravel 13
+- PHP 8.3
+- MySQL
+- Eloquent ORM
+- Blade
+- Tailwind CSS con Vite
+- PHPUnit
+- Git y GitHub
 
 ## Configuracion de base de datos
 
-La conexion definida para la practica usa MySQL:
+En `.env` se configura la conexion MySQL. Por seguridad, la contrasena real no debe publicarse en GitHub:
 
 ```env
 DB_CONNECTION=mysql
@@ -33,49 +30,210 @@ DB_USERNAME=hugo20271015
 DB_PASSWORD=tu_password_seguro
 ```
 
-Despues de configurar el archivo `.env`, se ejecutan las migraciones y seeders:
+Comandos para preparar la aplicacion:
 
 ```bash
+composer install
+npm install
+php artisan key:generate
 php artisan migrate --seed
+php artisan storage:link
 ```
 
-## Modulos principales
+Para levantar el servidor:
 
-### 1. Gestion de productos
+```bash
+php artisan serve
+npm run dev
+```
 
-El sistema contempla un CRUD completo para productos:
+## Usuarios de prueba
 
-- Crear productos desde el panel de administrador.
-- Listar productos en catalogo publico.
-- Consultar detalle de producto.
-- Editar nombre, descripcion, precio, stock, categoria, etiquetas e imagen.
-- Eliminar productos cuando ya no se vendan.
-- Buscar productos por nombre o descripcion.
-- Filtrar por categoria, etiqueta y rango de precio.
+El seeder crea dos usuarios:
 
-Modelo esperado:
+```txt
+Admin:
+email: admin@innovatech.test
+password: password
+
+Cliente:
+email: cliente@innovatech.test
+password: password
+```
+
+## Funcionalidades desarrolladas
+
+### Catalogo de productos
+
+El catalogo se muestra en `/` mediante `CatalogController`. Incluye:
+
+- Cuadricula de productos con Blade y Tailwind.
+- Vista de detalle en `/products/{product}`.
+- Busqueda por nombre o descripcion.
+- Filtro por categoria.
+- Filtro por etiqueta.
+- Filtro por precio maximo desde el controlador.
+- Paginacion.
+
+Fragmento relevante:
 
 ```php
-namespace App\Models;
+$products = Product::query()
+    ->with(['category', 'tags'])
+    ->active()
+    ->when($request->filled('search'), function ($query) use ($request): void {
+        $search = $request->string('search')->toString();
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+        $query->where(function ($query) use ($search): void {
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%");
+        });
+    })
+    ->latest()
+    ->paginate(9)
+    ->withQueryString();
+```
 
+### CRUD de productos
+
+El panel de administracion esta en `/admin/products` y se protege con `auth` y `admin`.
+
+Permite:
+
+- Crear productos.
+- Editar productos.
+- Eliminar productos.
+- Asignar categoria.
+- Asignar etiquetas.
+- Activar o desactivar productos.
+- Subir imagenes a `storage/app/public/products`.
+- Registrar cambios de precio en logs.
+
+Validacion principal:
+
+```php
+return $request->validate([
+    'category_id' => ['required', 'exists:categories,id'],
+    'name' => ['required', 'string', 'max:255'],
+    'description' => ['required', 'string'],
+    'price' => ['required', 'numeric', 'min:0'],
+    'stock' => ['required', 'integer', 'min:0'],
+    'image' => ['nullable', 'image', 'max:2048'],
+    'tags' => ['array'],
+    'tags.*' => ['exists:tags,id'],
+]);
+```
+
+Auditoria de cambio de precio:
+
+```php
+if ($product->isDirty('price')) {
+    Log::info('Cambio de precio de producto', [
+        'product_id' => $product->id,
+        'old_price' => $oldPrice,
+        'new_price' => $product->price,
+        'user_id' => $request->user()->id,
+    ]);
+}
+```
+
+### Autenticacion y roles
+
+Se implemento autenticacion basica propia con:
+
+- Registro en `/register`.
+- Inicio de sesion en `/login`.
+- Cierre de sesion en `/logout`.
+- Campo `role` en usuarios.
+- Rol `admin`.
+- Rol `customer`.
+- Middleware `EnsureUserIsAdmin`.
+
+Middleware:
+
+```php
+class EnsureUserIsAdmin
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        abort_unless($request->user()?->role === 'admin', 403);
+
+        return $next($request);
+    }
+}
+```
+
+Registro del alias en `bootstrap/app.php`:
+
+```php
+$middleware->alias([
+    'admin' => EnsureUserIsAdmin::class,
+]);
+```
+
+### Carrito de compras
+
+El carrito usa la sesion de Laravel. Incluye:
+
+- Agregar productos.
+- Actualizar cantidades.
+- Eliminar productos.
+- Calcular subtotal.
+- Calcular IVA.
+- Calcular total.
+
+Calculo:
+
+```php
+$cart = session('cart', []);
+$subtotal = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
+$tax = round($subtotal * 0.16, 2);
+$total = $subtotal + $tax;
+```
+
+### Checkout simulado
+
+El checkout requiere usuario autenticado y esta disponible en `/checkout`.
+
+Flujo:
+
+1. El cliente agrega productos al carrito.
+2. Revisa subtotal, IVA y total.
+3. Confirma el pago simulado.
+4. Se crea un pedido en `orders`.
+5. Se crean las partidas en `order_items`.
+6. Se descuenta stock.
+7. Se limpia el carrito.
+8. Se redirige a `/checkout/success`.
+
+Fragmento:
+
+```php
+$order = $request->user()->orders()->create([
+    'subtotal' => $totals['subtotal'],
+    'tax' => $totals['tax'],
+    'total' => $totals['total'],
+    'status' => 'paid',
+]);
+```
+
+## Base de datos
+
+Se agregaron migraciones para:
+
+- `users`: se agrego `role`.
+- `categories`: categorias del catalogo.
+- `tags`: etiquetas.
+- `products`: productos con precio, stock, imagen y estado.
+- `product_tag`: relacion muchos a muchos.
+- `orders`: pedidos.
+- `order_items`: productos comprados en cada pedido.
+
+Relacion del modelo `Product`:
+
+```php
 class Product extends Model
 {
-    use HasFactory;
-
-    protected $fillable = [
-        'category_id',
-        'name',
-        'slug',
-        'description',
-        'price',
-        'stock',
-        'image_path',
-        'is_active',
-    ];
-
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -93,251 +251,7 @@ class Product extends Model
 }
 ```
 
-Ejemplo de validacion en controlador:
-
-```php
-$validated = $request->validate([
-    'category_id' => ['required', 'exists:categories,id'],
-    'name' => ['required', 'string', 'max:255'],
-    'description' => ['required', 'string'],
-    'price' => ['required', 'numeric', 'min:0'],
-    'stock' => ['required', 'integer', 'min:0'],
-    'image' => ['nullable', 'image', 'max:2048'],
-    'tags' => ['array'],
-]);
-```
-
-### 2. Categorias y etiquetas
-
-Las categorias permiten agrupar productos por familia, por ejemplo:
-
-- Laptops
-- Componentes
-- Accesorios
-- Monitores
-- Perifericos
-
-Las etiquetas agregan busquedas mas flexibles:
-
-- gaming
-- oferta
-- nuevo
-- productividad
-- envio rapido
-
-Relaciones principales:
-
-```php
-// Category.php
-public function products()
-{
-    return $this->hasMany(Product::class);
-}
-
-// Tag.php
-public function products()
-{
-    return $this->belongsToMany(Product::class);
-}
-```
-
-### 3. Catalogo con Blade y Tailwind CSS
-
-La pagina principal muestra una cuadricula de productos con imagen, nombre, precio y boton para ver detalle o agregar al carrito.
-
-Ejemplo simplificado de tarjeta:
-
-```blade
-<article class="rounded border bg-white p-4 shadow-sm">
-    <img
-        src="{{ Storage::url($product->image_path) }}"
-        alt="{{ $product->name }}"
-        class="h-48 w-full rounded object-cover"
-    >
-
-    <h2 class="mt-4 text-lg font-semibold text-gray-900">
-        {{ $product->name }}
-    </h2>
-
-    <p class="mt-2 text-sm text-gray-600">
-        {{ Str::limit($product->description, 90) }}
-    </p>
-
-    <div class="mt-4 flex items-center justify-between">
-        <span class="font-bold text-blue-700">
-            ${{ number_format($product->price, 2) }}
-        </span>
-
-        <a href="{{ route('products.show', $product) }}" class="text-sm text-blue-600">
-            Ver detalle
-        </a>
-    </div>
-</article>
-```
-
-Vista de detalle:
-
-```blade
-<section class="grid gap-8 md:grid-cols-2">
-    <img src="{{ Storage::url($product->image_path) }}" alt="{{ $product->name }}" class="rounded">
-
-    <div>
-        <h1 class="text-3xl font-bold">{{ $product->name }}</h1>
-        <p class="mt-4 text-gray-700">{{ $product->description }}</p>
-        <p class="mt-6 text-2xl font-bold">${{ number_format($product->price, 2) }}</p>
-
-        <form method="POST" action="{{ route('cart.store', $product) }}" class="mt-6">
-            @csrf
-            <button class="rounded bg-blue-600 px-4 py-2 text-white">
-                Agregar al carrito
-            </button>
-        </form>
-    </div>
-</section>
-```
-
-### 4. Usuarios, autenticacion y roles
-
-El sistema maneja dos roles principales:
-
-- **Admin:** puede crear, editar y eliminar productos, categorias, etiquetas y revisar pedidos.
-- **Cliente:** puede navegar el catalogo, agregar productos al carrito y realizar checkout.
-
-Una forma simple de implementarlo es agregar un campo `role` en la tabla `users`:
-
-```php
-$table->string('role')->default('customer');
-```
-
-Middleware de autorizacion:
-
-```php
-namespace App\Http\Middleware;
-
-use Closure;
-use Illuminate\Http\Request;
-
-class EnsureUserIsAdmin
-{
-    public function handle(Request $request, Closure $next)
-    {
-        abort_unless($request->user()?->role === 'admin', 403);
-
-        return $next($request);
-    }
-}
-```
-
-Rutas protegidas:
-
-```php
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::resource('products', Admin\ProductController::class);
-    Route::resource('categories', Admin\CategoryController::class);
-    Route::resource('tags', Admin\TagController::class);
-});
-```
-
-### 5. Carrito de compras
-
-El carrito permite:
-
-- Agregar productos.
-- Eliminar productos.
-- Actualizar cantidades.
-- Calcular subtotal.
-- Calcular impuestos.
-- Calcular total.
-
-Ejemplo de calculo:
-
-```php
-$subtotal = collect(session('cart', []))->sum(function ($item) {
-    return $item['price'] * $item['quantity'];
-});
-
-$tax = $subtotal * 0.16;
-$total = $subtotal + $tax;
-```
-
-Estructura recomendada en sesion:
-
-```php
-session([
-    'cart' => [
-        $product->id => [
-            'name' => $product->name,
-            'price' => $product->price,
-            'quantity' => 1,
-        ],
-    ],
-]);
-```
-
-### 6. Checkout simulado
-
-El checkout registra una orden y muestra un mensaje de compra exitosa. No se conecta con una pasarela real de pago; se simula la aprobacion para cumplir el flujo completo.
-
-Flujo esperado:
-
-1. El cliente inicia sesion.
-2. Revisa productos del carrito.
-3. Confirma compra.
-4. El sistema crea un pedido con sus productos.
-5. Se descuenta stock.
-6. Se limpia el carrito.
-7. Se muestra una pantalla de exito.
-
-Ejemplo de creacion de pedido:
-
-```php
-$order = $request->user()->orders()->create([
-    'subtotal' => $subtotal,
-    'tax' => $tax,
-    'total' => $total,
-    'status' => 'paid',
-]);
-
-foreach ($cart as $productId => $item) {
-    $order->items()->create([
-        'product_id' => $productId,
-        'quantity' => $item['quantity'],
-        'unit_price' => $item['price'],
-        'total' => $item['price'] * $item['quantity'],
-    ]);
-}
-```
-
-## Base de datos
-
-Tablas principales:
-
-- `users`: usuarios registrados y rol.
-- `categories`: categorias de productos.
-- `tags`: etiquetas reutilizables.
-- `products`: informacion comercial del producto.
-- `product_tag`: tabla pivote para relacion muchos a muchos.
-- `orders`: pedidos realizados por clientes.
-- `order_items`: productos incluidos en cada pedido.
-
-Ejemplo de migracion para productos:
-
-```php
-Schema::create('products', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('category_id')->constrained()->cascadeOnDelete();
-    $table->string('name');
-    $table->string('slug')->unique();
-    $table->text('description');
-    $table->decimal('price', 10, 2);
-    $table->unsignedInteger('stock')->default(0);
-    $table->string('image_path')->nullable();
-    $table->boolean('is_active')->default(true);
-    $table->timestamps();
-});
-```
-
-Consulta avanzada: productos mas vendidos.
+Consulta avanzada para productos mas vendidos:
 
 ```php
 $bestSellers = Product::query()
@@ -350,76 +264,71 @@ $bestSellers = Product::query()
     ->get();
 ```
 
-## Seguridad: protocolo AAA
+## Vistas Blade y archivos estaticos
 
-### Authentication
+Se crearon vistas en:
 
-La autenticacion se implementa con registro, login, logout y, de forma deseable, verificacion de email.
+- `resources/views/components/layouts/app.blade.php`
+- `resources/views/auth`
+- `resources/views/catalog`
+- `resources/views/cart`
+- `resources/views/checkout`
+- `resources/views/admin/products`
 
-Comando recomendado si se instala Breeze:
+Tambien se agregaron archivos estaticos:
 
-```bash
-composer require laravel/breeze --dev
-php artisan breeze:install blade
-npm install
-npm run build
-php artisan migrate
+- `public/css/store.css`
+- `public/js/store.js`
+
+Ejemplo de tarjeta de producto:
+
+```blade
+<article class="flex flex-col overflow-hidden rounded border bg-white shadow-sm">
+    <a href="{{ route('products.show', $product) }}">
+        <img src="{{ Storage::url($product->image_path) }}" alt="{{ $product->name }}">
+    </a>
+
+    <div class="p-5">
+        <h2 class="text-lg font-bold">{{ $product->name }}</h2>
+        <p class="text-sm text-slate-600">{{ Str::limit($product->description, 100) }}</p>
+        <span class="text-xl font-bold">${{ number_format($product->price, 2) }}</span>
+    </div>
+</article>
 ```
 
-### Authorization
+## Rutas principales
 
-La autorizacion se maneja mediante middleware de roles. Las rutas administrativas deben requerir usuario autenticado y rol `admin`.
-
-```php
-Route::middleware(['auth', 'admin'])->group(function () {
-    Route::resource('admin/products', ProductController::class);
-});
+```txt
+GET    /                         CatalogController@index
+GET    /products/{product}       CatalogController@show
+GET    /cart                     CartController@index
+POST   /cart/{product}           CartController@store
+PATCH  /cart/{product}           CartController@update
+DELETE /cart/{product}           CartController@destroy
+GET    /checkout                 CheckoutController@create
+POST   /checkout                 CheckoutController@store
+GET    /checkout/success         CheckoutController@success
+GET    /admin/products           Admin\ProductController@index
+POST   /admin/products           Admin\ProductController@store
+GET    /admin/products/create    Admin\ProductController@create
+PUT    /admin/products/{product} Admin\ProductController@update
+DELETE /admin/products/{product} Admin\ProductController@destroy
 ```
 
-### Auditoria
+## Tests
 
-Para actividades criticas, como cambios de precio, se pueden registrar logs:
+Se agregaron pruebas con PHPUnit:
 
-```php
-if ($product->isDirty('price')) {
-    Log::info('Cambio de precio de producto', [
-        'product_id' => $product->id,
-        'old_price' => $product->getOriginal('price'),
-        'new_price' => $product->price,
-        'user_id' => auth()->id(),
-    ]);
-}
-```
+- `ProductModelTest`: relaciones y route key del modelo.
+- `AuthenticationTest`: registro e inicio de sesion.
+- `AdminProductAccessTest`: acceso protegido por rol.
+- `CartCheckoutTest`: carrito y checkout.
+- `ExampleTest`: respuesta correcta del catalogo.
 
-## Tests con PHPUnit
-
-Los tests deben seguir el patron AAA:
-
-- **Arrange:** preparar usuario, producto, categoria o datos de prueba.
-- **Act:** ejecutar la accion del sistema.
-- **Assert:** verificar el resultado esperado.
-
-### Test unitario de modelo
+Ejemplo con patron AAA:
 
 ```php
-public function test_product_belongs_to_category(): void
-{
-    // Arrange
-    $category = Category::factory()->create();
-    $product = Product::factory()->create(['category_id' => $category->id]);
-
-    // Act
-    $productCategory = $product->category;
-
-    // Assert
-    $this->assertTrue($productCategory->is($category));
-}
-```
-
-### Test feature de ruta protegida
-
-```php
-public function test_customer_cannot_create_products(): void
+public function test_customer_cannot_open_product_create_screen(): void
 {
     // Arrange
     $customer = User::factory()->create(['role' => 'customer']);
@@ -432,153 +341,60 @@ public function test_customer_cannot_create_products(): void
 }
 ```
 
-### Test feature de compra
+Resultado verificado:
 
-```php
-public function test_authenticated_customer_can_checkout(): void
-{
-    // Arrange
-    $user = User::factory()->create(['role' => 'customer']);
-    $product = Product::factory()->create(['stock' => 5, 'price' => 100]);
-
-    // Act
-    $response = $this
-        ->actingAs($user)
-        ->withSession([
-            'cart' => [
-                $product->id => [
-                    'name' => $product->name,
-                    'price' => 100,
-                    'quantity' => 1,
-                ],
-            ],
-        ])
-        ->post('/checkout');
-
-    // Assert
-    $response->assertRedirect('/checkout/success');
-}
-```
-
-Comando para correr pruebas:
-
-```bash
+```txt
 php artisan test
+Tests: 9 passed
+Assertions: 12
 ```
 
-Comando para cobertura:
+La cobertura con `php artisan test --coverage` requiere instalar o habilitar **Xdebug** o **PCOV** en PHP.
+
+## Comandos utiles
+
+Ejecutar migraciones y seeders:
 
 ```bash
-php artisan test --coverage
+php artisan migrate:fresh --seed
 ```
 
-## Archivos estaticos
-
-Los archivos CSS y JS se organizan en:
-
-- `resources/css/app.css`
-- `resources/js/app.js`
-- `public/` para archivos publicos como imagenes generadas o assets estaticos.
-- `storage/app/public` para imagenes subidas por usuarios.
-
-Para exponer imagenes subidas:
+Crear enlace de storage para imagenes:
 
 ```bash
 php artisan storage:link
 ```
 
-## Estructura recomendada de rutas
-
-```php
-Route::get('/', [CatalogController::class, 'index'])->name('home');
-Route::get('/products/{product:slug}', [CatalogController::class, 'show'])->name('products.show');
-
-Route::middleware('auth')->group(function () {
-    Route::post('/cart/{product}', [CartController::class, 'store'])->name('cart.store');
-    Route::delete('/cart/{product}', [CartController::class, 'destroy'])->name('cart.destroy');
-    Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.create');
-    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-});
-```
-
-## Buenas practicas aplicadas
-
-- Separacion de responsabilidades mediante controladores, modelos y vistas.
-- Uso de migraciones para versionar la base de datos.
-- Uso de seeders y factories para datos de prueba.
-- Validacion de datos antes de crear o actualizar registros.
-- Middleware para proteger rutas administrativas.
-- Logs para auditoria de cambios importantes.
-- Tests independientes y descriptivos.
-- Uso de ramas por funcionalidad, por ejemplo `feature/products`, `feature/cart` y `feature/checkout`.
-- Commits claros, por ejemplo `Añadido CRUD de productos` o `Agregado checkout simulado`.
-
-## Comandos utiles
-
-Instalar dependencias:
-
-```bash
-composer install
-npm install
-```
-
-Generar llave de aplicacion:
-
-```bash
-php artisan key:generate
-```
-
-Ejecutar migraciones y seeders:
-
-```bash
-php artisan migrate --seed
-```
-
-Levantar servidor local:
-
-```bash
-php artisan serve
-```
-
-Compilar assets:
-
-```bash
-npm run dev
-```
-
-Ejecutar tests:
+Ejecutar pruebas:
 
 ```bash
 php artisan test
 ```
 
-## Flujo con Git y GitHub
-
-Crear una rama para cada modulo:
+Compilar assets:
 
 ```bash
-git checkout -b feature/productos
+npm install
+npm run build
 ```
 
-Guardar cambios:
+Nota: Vite 8 requiere Node.js 20.19+ o 22.12+. Si `npm run build` falla con Node 20.18.0, actualiza Node y vuelve a ejecutar los comandos anteriores.
 
-```bash
-git add .
-git commit -m "Documentado reporte de practica ecommerce"
-```
-
-Subir rama:
-
-```bash
-git push origin feature/productos
-```
-
-Si Git muestra advertencia de propiedad dudosa en Windows, ejecutar:
+Si Git muestra advertencia de propiedad dudosa en Windows:
 
 ```bash
 git config --global --add safe.directory "C:/Users/PC One/Herd/ecommerce-innova-tech-shop"
 ```
 
+## Flujo recomendado con Git
+
+```bash
+git checkout -b feature/ecommerce-basico
+git add .
+git commit -m "Desarrollado ecommerce basico en Laravel"
+git push origin feature/ecommerce-basico
+```
+
 ## Conclusion
 
-InnovaTechShop integra los elementos esenciales de un ecommerce academico: productos, categorias, etiquetas, autenticacion, roles, carrito, checkout simulado, migraciones, relaciones Eloquent, auditoria basica y pruebas. La practica permite demostrar dominio de Laravel como framework web moderno y refuerza el uso de buenas practicas de desarrollo, seguridad, versionamiento y testing.
+InnovaTechShop cumple con los requisitos principales de la practica: catalogo, CRUD de productos, categorias, etiquetas, subida de imagenes, autenticacion, roles, middleware, carrito, checkout simulado, migraciones, seeders, relaciones Eloquent, auditoria basica, vistas Blade con Tailwind, archivos estaticos y pruebas automatizadas.
