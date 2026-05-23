@@ -94,7 +94,7 @@ class ProductController extends Controller
             Storage::disk('public')->delete($product->image_path);
         }
 
-        $product->delete();
+        Product::destroy($product->id);
 
         return redirect()->route('admin.products.index')->with('status', 'Producto eliminado correctamente.');
     }
@@ -102,8 +102,8 @@ class ProductController extends Controller
     private function formData(): array
     {
         return [
-            'categories' => Category::orderBy('name')->get(),
-            'tags' => Tag::orderBy('name')->get(),
+            'categories' => Category::orderBy('name', 'asc')->get(),
+            'tags' => Tag::orderBy('name', 'asc')->get(),
         ];
     }
 
