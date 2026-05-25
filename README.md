@@ -442,31 +442,6 @@ Tests: 9 passed
 Assertions: 12
 ```
 
-## Capturas recomendadas para el reporte
-
-1. `.env` mostrando `DB_CONNECTION=sqlite`.
-2. `config/database.php` mostrando `database_path('database.sqlite')`.
-3. `database/database.sqlite` abierto en VS Code con las tablas.
-4. Tabla `products` con los productos insertados por el seeder.
-5. Tabla `users` con admin y cliente.
-6. Tabla `categories`.
-7. Tabla `tags`.
-8. Tabla `orders` despues de una compra.
-9. Tabla `order_items` despues de una compra.
-10. Catalogo principal con cuadricula de productos.
-11. Filtros del catalogo.
-12. Vista de detalle de producto.
-13. Formulario de login.
-14. Formulario de registro.
-15. Panel administrativo de productos.
-16. Formulario de crear producto.
-17. Formulario de editar producto.
-18. Carrito con subtotal, IVA y total.
-19. Pantalla de checkout.
-20. Pantalla de compra exitosa.
-21. Terminal ejecutando `php artisan migrate --seed`.
-22. Terminal ejecutando `php artisan route:list`.
-23. Terminal ejecutando `php artisan test` con pruebas aprobadas.
 
 ## Comandos utiles
 
@@ -501,10 +476,9 @@ npm install
 npm run build
 ```
 
-Nota: Vite 8 requiere Node.js 20.19+ o 22.12+. Si `npm run build` falla con Node 20.18.0, se debe actualizar Node.
 
-## Conclusion
 
-InnovaTechShop implementa un ecommerce basico funcional en Laravel. La base de datos se resolvio con SQLite mediante el archivo `database/database.sqlite`, lo cual permite trabajar localmente sin servidor externo. Laravel usa esta base porque `.env` define `DB_CONNECTION=sqlite` y `config/database.php` apunta por defecto a `database_path('database.sqlite')`.
+## Resultado
 
-El proyecto integra catalogo, CRUD de productos, categorias, etiquetas, autenticacion, roles, middleware, carrito, checkout simulado, migraciones, seeders, relaciones Eloquent, vistas Blade, archivos estaticos y pruebas automatizadas con SQLite en memoria.
+<img width="816" height="503" alt="Imagen1343543" src="https://github.com/user-attachments/assets/223058ae-94b7-431c-816e-2e67aa7cf6f0" />
+
