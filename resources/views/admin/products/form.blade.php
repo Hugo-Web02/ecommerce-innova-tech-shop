@@ -31,14 +31,34 @@
     </label>
 
     <label class="block">
-        <span class="text-sm font-medium">Imagen</span>
+        <span class="text-sm font-medium">Imagen local</span>
         <input name="image" type="file" accept="image/*" class="mt-1 w-full rounded border border-slate-300 bg-white p-2">
+        <span class="mt-1 block text-xs text-slate-500">Formatos: jpg, png, webp o gif. Si tu PHP local sigue limitado a 2 MB, usa la URL de imagen.</span>
+    </label>
+
+    <label class="block">
+        <span class="text-sm font-medium">Imagen por URL</span>
+        <input
+            name="image_url"
+            type="url"
+            value="{{ old('image_url', isset($product) && str_starts_with((string) $product->image_path, 'http') ? $product->image_path : '') }}"
+            placeholder="https://ejemplo.com/imagen.jpg"
+            class="mt-1 w-full rounded border-slate-300"
+        >
+        <span class="mt-1 block text-xs text-slate-500">Puedes usar una imagen local o una URL. Si llenas ambas, se guarda la imagen local.</span>
     </label>
 
     <label class="flex items-center gap-2 pt-7">
         <input name="is_active" type="checkbox" value="1" @checked(old('is_active', $product->is_active ?? true)) class="rounded">
         Producto activo
     </label>
+
+    @if(isset($product) && $product->imageUrl())
+        <div class="md:col-span-2">
+            <span class="text-sm font-medium">Imagen actual</span>
+            <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" class="mt-2 h-32 w-48 rounded border object-cover">
+        </div>
+    @endif
 </div>
 
 <fieldset class="mt-5">

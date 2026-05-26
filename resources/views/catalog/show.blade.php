@@ -1,8 +1,8 @@
 <x-layouts.app title="{{ $product->name }}">
     <section class="grid gap-8 md:grid-cols-2">
         <div class="overflow-hidden rounded border bg-white">
-            @if($product->image_path)
-                <img src="{{ Storage::url($product->image_path) }}" alt="{{ $product->name }}" class="h-full min-h-96 w-full object-cover">
+            @if($product->imageUrl())
+                <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" class="h-full min-h-96 w-full object-cover">
             @else
                 <div class="flex min-h-96 items-center justify-center bg-slate-200 font-semibold text-slate-500">Sin imagen</div>
             @endif

@@ -53,4 +53,24 @@ class Product extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public function imageUrl(): ?string
+    {
+        if (! $this->image_path) {
+            return null;
+        }
+
+        if (str_starts_with($this->image_path, 'http://') || str_starts_with($this->image_path, 'https://')) {
+            return $this->image_path;
+        }
+
+        return asset('storage/'.$this->image_path);
+    }
+
+    public function hasLocalImage(): bool
+    {
+        return $this->image_path
+            && ! str_starts_with($this->image_path, 'http://')
+            && ! str_starts_with($this->image_path, 'https://');
+    }
 }

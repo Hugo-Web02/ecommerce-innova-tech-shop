@@ -1,102 +1,86 @@
-# InnovaTechShop - Reporte de practica 3.2
+# InnovaTechShop - Ecommerce basico en Laravel
 
-## Sistema Ecommerce basico en Laravel
+## Resumen del proyecto
 
-## Introduccion
+**InnovaTechShop** es un sistema ecommerce basico desarrollado con Laravel. El proyecto incluye catalogo de productos, autenticacion, roles, panel administrativo, carrito de compras, checkout simulado, migraciones, seeders, relaciones Eloquent, vistas Blade con Tailwind CSS y pruebas con PHPUnit.
 
-**InnovaTechShop** es un sistema ecommerce basico desarrollado en Laravel. El proyecto tiene como objetivo aplicar conocimientos de frameworks web en un caso practico: administracion de productos, catalogo publico, autenticacion, roles, carrito de compras, checkout simulado, base de datos con SQLite, migraciones, seeders, relaciones Eloquent, vistas Blade con Tailwind CSS y pruebas automatizadas con PHPUnit.
-
-El sistema permite que un cliente navegue productos tecnologicos, consulte detalles, agregue articulos al carrito y complete una compra simulada. Tambien incluye un panel administrativo protegido para gestionar productos.
+En esta continuacion del proyecto se cambio la base de datos local SQLite por una base de datos **MySQL remota en AlwaysData**. La aplicacion ya no queda configurada para usar `database/database.sqlite`; ahora trabaja con la conexion MySQL definida en `.env`.
 
 ## Tecnologias utilizadas
 
 - Laravel 13
 - PHP 8.3
-- SQLite
+- MySQL en AlwaysData
 - Eloquent ORM
 - Blade
 - Tailwind CSS con Vite
 - PHPUnit
 - Git y GitHub
 
-## Configuracion real de base de datos
+## Configuracion de base de datos MySQL
 
-En esta implementacion se utilizo **SQLite** como base de datos local del proyecto. SQLite guarda la informacion en un archivo fisico, por lo que no necesita servidor externo, usuario, contrasena, host ni puerto.
-
-El archivo utilizado por el proyecto es:
-
-```txt
-database/database.sqlite
-```
-
-En el archivo `.env` la conexion activa esta configurada asi:
+La conexion principal se configuro en `.env` con MySQL:
 
 ```env
-DB_CONNECTION=sqlite
+DB_CONNECTION=mysql
+DB_HOST=mysql-hugo20271015.alwaysdata.net
+DB_PORT=3306
+DB_DATABASE=hugo20271015_innova_tech_shop
+DB_USERNAME=hugo20271015
+DB_PASSWORD=********
 ```
 
-No aparece `DB_DATABASE=database/database.sqlite` en `.env`. Esto funciona porque Laravel ya trae una configuracion por defecto en `config/database.php`. En la conexion `sqlite`, Laravel usa `DB_DATABASE` si existe; si no existe, automaticamente toma el archivo `database/database.sqlite`.
+La contrasena real esta colocada en el archivo `.env` local para que Laravel pueda conectarse. En este README se oculta con asteriscos para no exponer credenciales.
 
-Fragmento relevante de `config/database.php`:
+Despues de cambiar `.env`, se limpio la cache de configuracion:
 
-```php
-'sqlite' => [
-    'driver' => 'sqlite',
-    'url' => env('DB_URL'),
-    'database' => env('DB_DATABASE', database_path('database.sqlite')),
-    'prefix' => '',
-    'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
-],
+```bash
+php artisan config:clear
 ```
 
-Esto significa que el proyecto funciona con SQLite de la siguiente manera:
+Luego se ejecutaron migraciones y seeders directamente sobre MySQL:
 
-1. `.env` indica que la conexion es `sqlite`.
-2. Laravel revisa si existe `DB_DATABASE`.
-3. Como no se definio `DB_DATABASE`, usa el valor por defecto.
-4. Ese valor por defecto apunta a `database/database.sqlite`.
-5. Las migraciones crean las tablas dentro de ese archivo.
-6. Los seeders insertan usuarios, categorias, etiquetas y productos iniciales.
-
-## SQLite fisico y SQLite en memoria
-
-El proyecto usa SQLite de dos formas diferentes:
-
-- **SQLite fisico:** es el archivo `database/database.sqlite`. Se usa cuando se ejecuta la aplicacion normalmente.
-- **SQLite en memoria:** se usa solo en pruebas automatizadas con PHPUnit.
-
-En `phpunit.xml` se configura SQLite en memoria:
-
-```xml
-<env name="DB_CONNECTION" value="sqlite"/>
-<env name="DB_DATABASE" value=":memory:"/>
+```bash
+php artisan migrate --seed --force
 ```
 
-La base `:memory:` no es un archivo. Se crea temporalmente en RAM al iniciar las pruebas y desaparece al terminar. Esto permite ejecutar `php artisan test` sin alterar los datos reales guardados en `database/database.sqlite`.
+Resultado de la carga inicial en MySQL:
 
-## Tablas creadas en database.sqlite
+```txt
+users: 6
+admins: 2
+customers: 4
+products: 9
+categories: 5
+tags: 5
+```
 
-Al ejecutar las migraciones se crean las tablas principales del ecommerce y algunas tablas internas de Laravel.
+## Tablas creadas
 
-Tablas propias del ecommerce:
+Las migraciones crean tablas propias del ecommerce y tablas internas de Laravel.
 
-- `users`: usuarios registrados. Se agrego el campo `role` para diferenciar `admin` y `customer`.
-- `categories`: categorias del catalogo.
-- `tags`: etiquetas para clasificar productos.
-- `products`: productos con categoria, nombre, slug, descripcion, precio, stock, imagen y estado.
-- `product_tag`: tabla pivote para relacionar productos y etiquetas.
-- `orders`: pedidos generados durante el checkout.
-- `order_items`: productos incluidos en cada pedido.
+Tablas principales:
+
+- `users`: usuarios registrados. Incluye el campo `role` para distinguir administradores y clientes.
+- `categories`: categorias de productos.
+- `tags`: etiquetas de productos.
+- `products`: productos del catalogo.
+- `product_tag`: tabla pivote entre productos y etiquetas.
+- `orders`: pedidos generados en el checkout.
+- `order_items`: detalle de productos dentro de cada pedido.
 
 Tablas internas de Laravel:
 
-- `migrations`: historial de migraciones ejecutadas.
-- `sessions`: sesiones de usuarios.
-- `cache` y `cache_locks`: almacenamiento de cache.
-- `jobs`, `job_batches` y `failed_jobs`: soporte para colas.
-- `password_reset_tokens`: recuperacion de contrasenas.
+- `migrations`
+- `sessions`
+- `cache`
+- `cache_locks`
+- `jobs`
+- `job_batches`
+- `failed_jobs`
+- `password_reset_tokens`
 
-Ejemplo de migracion de productos:
+Fragmento de migracion para productos:
 
 ```php
 Schema::create('products', function (Blueprint $table): void {
@@ -113,39 +97,64 @@ Schema::create('products', function (Blueprint $table): void {
 });
 ```
 
-## Seeders y datos iniciales
+## Seeders actualizados
 
-El archivo `DatabaseSeeder.php` inserta datos iniciales para probar el ecommerce sin capturar todo manualmente.
+El seeder se modifico para ser idempotente usando `updateOrCreate`. Esto evita errores por emails o slugs duplicados si se ejecuta varias veces.
 
-Usuarios creados:
+Fragmento:
 
-```txt
-Administrador:
-email: admin@innovatech.test
-password: password
-
-Cliente:
-email: cliente@innovatech.test
-password: password
+```php
+User::updateOrCreate(
+    ['email' => $email],
+    [
+        'name' => $name,
+        'password' => Hash::make('password'),
+        'role' => $role,
+    ]
+);
 ```
 
-Tambien se crean categorias:
+Tambien se uso `updateOrCreate` para categorias, etiquetas y productos:
 
-- Laptops
-- Componentes
-- Perifericos
-- Monitores
-- Accesorios
+```php
+$product = Product::updateOrCreate(
+    ['slug' => Str::slug($name)],
+    [
+        'category_id' => $categories[$categoryName]->id,
+        'name' => $name,
+        'description' => $description,
+        'price' => $price,
+        'stock' => $stock,
+        'is_active' => true,
+    ]
+);
+```
 
-Y etiquetas:
+## Usuarios creados
 
-- Gaming
-- Oferta
-- Nuevo
-- Productividad
-- Envio rapido
+El proyecto ahora carga 6 usuarios iniciales:
 
-Productos iniciales insertados:
+Administradores:
+
+- `admin@innovatech.test`
+- `operaciones@innovatech.test`
+
+Clientes:
+
+- `cliente@innovatech.test`
+- `compras@innovatech.test`
+- `soporte@innovatech.test`
+- `mayorista@innovatech.test`
+
+Todos los usuarios de prueba usan:
+
+```txt
+password
+```
+
+## Productos creados
+
+Productos originales:
 
 - Laptop InnovaBook Pro 14
 - SSD NVMe 1TB Velocity
@@ -154,28 +163,28 @@ Productos iniciales insertados:
 - Hub USB-C 7 en 1
 - Mouse inalambrico Precision X
 
-Fragmento del seeder:
+Productos nuevos agregados:
+
+- Laptop Gamer Titan RTX 15
+- Memoria RAM DDR5 32GB Dual Kit
+- Monitor 4K CreatorView 27 pulgadas
+
+Fragmento del arreglo de productos:
 
 ```php
 $products = [
-    ['Laptops', 'Laptop InnovaBook Pro 14', 18999, 8, 'Equipo portatil con procesador moderno...'],
-    ['Componentes', 'SSD NVMe 1TB Velocity', 1699, 20, 'Unidad de estado solido NVMe...'],
-    ['Perifericos', 'Teclado mecanico RGB NovaKeys', 1299, 15, 'Teclado mecanico con iluminacion RGB...'],
+    ['Laptops', 'Laptop InnovaBook Pro 14', 18999, 8, 'Equipo portatil...'],
+    ['Componentes', 'SSD NVMe 1TB Velocity', 1699, 20, 'Unidad de estado solido...'],
+    ['Perifericos', 'Teclado mecanico RGB NovaKeys', 1299, 15, 'Teclado mecanico...'],
+    ['Laptops', 'Laptop Gamer Titan RTX 15', 27999, 5, 'Laptop gamer con GPU dedicada...'],
+    ['Componentes', 'Memoria RAM DDR5 32GB Dual Kit', 2499, 12, 'Kit de memoria DDR5...'],
+    ['Monitores', 'Monitor 4K CreatorView 27 pulgadas', 7999, 7, 'Monitor 4K...'],
 ];
 ```
 
 ## Modelos y relaciones Eloquent
 
-Se implementaron modelos para representar las entidades principales del ecommerce:
-
-- `User`
-- `Category`
-- `Tag`
-- `Product`
-- `Order`
-- `OrderItem`
-
-El modelo `Product` se relaciona con categorias, etiquetas y partidas de pedido.
+Modelo `Product`:
 
 ```php
 public function category()
@@ -194,7 +203,7 @@ public function orderItems()
 }
 ```
 
-Tambien se configuro el slug como llave para rutas:
+El producto usa `slug` para las URLs:
 
 ```php
 public function getRouteKeyName(): string
@@ -203,13 +212,9 @@ public function getRouteKeyName(): string
 }
 ```
 
-Gracias a esto, la URL del producto usa un texto legible en lugar del id numerico.
-
 ## Catalogo de productos
 
-El catalogo publico se maneja desde `CatalogController`. Muestra productos activos, carga sus categorias y etiquetas, permite buscar por nombre o descripcion y filtrar por categoria, etiqueta o precio maximo.
-
-Fragmento relevante:
+El catalogo se maneja con `CatalogController`. Permite listar productos activos, buscar por texto y filtrar por categoria, etiqueta y precio maximo.
 
 ```php
 $products = Product::query()
@@ -228,32 +233,16 @@ $products = Product::query()
     ->withQueryString();
 ```
 
-Vistas principales:
+Vistas:
 
-- `resources/views/catalog/index.blade.php`: cuadricula de productos.
-- `resources/views/catalog/show.blade.php`: detalle de producto.
+- `resources/views/catalog/index.blade.php`
+- `resources/views/catalog/show.blade.php`
 
-## CRUD administrativo de productos
+## CRUD administrativo
 
-El CRUD de productos esta protegido para usuarios administradores. Sus vistas se encuentran en:
+El administrador puede crear, editar y eliminar productos. Las rutas estan protegidas con `auth` y `admin`.
 
-```txt
-resources/views/admin/products
-```
-
-Funcionalidades:
-
-- Crear productos.
-- Editar productos.
-- Eliminar productos.
-- Asignar categoria.
-- Asignar etiquetas.
-- Definir precio y stock.
-- Activar o desactivar productos.
-- Subir imagenes.
-- Registrar cambios de precio en logs.
-
-Validacion principal:
+Validacion:
 
 ```php
 return $request->validate([
@@ -283,23 +272,12 @@ if ($product->isDirty('price')) {
 
 ## Autenticacion y roles
 
-Se implemento autenticacion basica con:
+Se implementaron roles:
 
-- Registro de usuario.
-- Inicio de sesion.
-- Cierre de sesion.
-- Rol `admin`.
-- Rol `customer`.
+- `admin`: acceso al panel administrativo.
+- `customer`: acceso como cliente.
 
-El campo `role` se agrego a la tabla `users` mediante una migracion:
-
-```php
-Schema::table('users', function (Blueprint $table): void {
-    $table->string('role')->default('customer')->after('password');
-});
-```
-
-El middleware `EnsureUserIsAdmin` protege las rutas administrativas:
+Middleware:
 
 ```php
 public function handle(Request $request, Closure $next): Response
@@ -310,28 +288,9 @@ public function handle(Request $request, Closure $next): Response
 }
 ```
 
-Registro del middleware en `bootstrap/app.php`:
-
-```php
-$middleware->alias([
-    'admin' => EnsureUserIsAdmin::class,
-]);
-```
-
 ## Carrito de compras
 
-El carrito se implemento con sesiones de Laravel. Cada producto agregado se guarda temporalmente en `session('cart')` con id, slug, nombre, precio, cantidad e imagen.
-
-Funcionalidades:
-
-- Agregar productos.
-- Actualizar cantidades.
-- Eliminar productos.
-- Calcular subtotal.
-- Calcular IVA.
-- Calcular total.
-
-Calculo del carrito:
+El carrito se guarda en sesion. Permite agregar productos, actualizar cantidades, eliminar productos y calcular totales.
 
 ```php
 $cart = session('cart', []);
@@ -342,19 +301,7 @@ $total = $subtotal + $tax;
 
 ## Checkout simulado
 
-El checkout requiere que el usuario haya iniciado sesion. El flujo no usa una pasarela real, sino una simulacion de pago aprobado.
-
-Proceso:
-
-1. El cliente revisa su carrito.
-2. Confirma el pago simulado.
-3. Se crea un registro en `orders`.
-4. Se crean registros en `order_items`.
-5. Se descuenta stock de cada producto.
-6. Se limpia la sesion del carrito.
-7. Se muestra pantalla de compra exitosa.
-
-Fragmento principal:
+El checkout crea un pedido, registra sus productos, descuenta inventario y limpia el carrito.
 
 ```php
 $order = $request->user()->orders()->create([
@@ -364,28 +311,6 @@ $order = $request->user()->orders()->create([
     'status' => 'paid',
 ]);
 ```
-
-## Vistas Blade y archivos estaticos
-
-Se crearon vistas Blade para reutilizar estructura y mostrar la tienda:
-
-- `resources/views/components/layouts/app.blade.php`
-- `resources/views/auth/login.blade.php`
-- `resources/views/auth/register.blade.php`
-- `resources/views/catalog/index.blade.php`
-- `resources/views/catalog/show.blade.php`
-- `resources/views/cart/index.blade.php`
-- `resources/views/checkout/create.blade.php`
-- `resources/views/checkout/success.blade.php`
-- `resources/views/admin/products/index.blade.php`
-- `resources/views/admin/products/create.blade.php`
-- `resources/views/admin/products/edit.blade.php`
-- `resources/views/admin/products/form.blade.php`
-
-Archivos estaticos agregados:
-
-- `public/css/store.css`
-- `public/js/store.js`
 
 ## Rutas principales
 
@@ -406,79 +331,52 @@ PUT    /admin/products/{product} Admin\ProductController@update
 DELETE /admin/products/{product} Admin\ProductController@destroy
 ```
 
-## Pruebas automatizadas
+## Pruebas
 
-Se agregaron pruebas con PHPUnit usando SQLite en memoria. Esto permite validar el comportamiento sin modificar `database/database.sqlite`.
+El proyecto conserva pruebas con PHPUnit. La configuracion de PHPUnit ya no fuerza SQLite en memoria, por lo que hereda la conexion definida en `.env`.
 
-Pruebas creadas:
-
-- `ProductModelTest`: prueba relaciones del modelo y uso de slug.
-- `AuthenticationTest`: prueba registro e inicio de sesion.
-- `AdminProductAccessTest`: prueba acceso protegido al panel admin.
-- `CartCheckoutTest`: prueba carrito y checkout.
-- `ExampleTest`: prueba respuesta del catalogo.
-
-Ejemplo con patron AAA:
-
-```php
-public function test_customer_cannot_open_product_create_screen(): void
-{
-    // Arrange
-    $customer = User::factory()->create(['role' => 'customer']);
-
-    // Act
-    $response = $this->actingAs($customer)->get('/admin/products/create');
-
-    // Assert
-    $response->assertForbidden();
-}
-```
-
-Resultado obtenido:
-
-```txt
-php artisan test
-Tests: 9 passed
-Assertions: 12
-```
-
+Importante: al usar MySQL real en PHPUnit, se debe tener cuidado con pruebas que refrescan la base de datos. Lo recomendable en un proyecto real seria usar una base MySQL separada exclusivamente para testing.
 
 ## Comandos utiles
 
-Crear o actualizar tablas y cargar datos:
+Limpiar configuracion:
 
 ```bash
-php artisan migrate --seed
+php artisan config:clear
 ```
 
-Reiniciar la base SQLite y volver a cargar datos:
+Ejecutar migraciones y seeders:
 
 ```bash
-php artisan migrate:fresh --seed
+php artisan migrate --seed --force
 ```
 
-Ejecutar pruebas:
+Verificar conteos con Tinker:
 
 ```bash
-php artisan test
+php artisan tinker
 ```
 
-Levantar el servidor:
-
-```bash
-php artisan serve
+```php
+[
+    'users' => App\Models\User::count(),
+    'admins' => App\Models\User::where('role', 'admin')->count(),
+    'customers' => App\Models\User::where('role', 'customer')->count(),
+    'products' => App\Models\Product::count(),
+]
 ```
 
-Compilar assets:
+## Resultado actual en MySQL
 
-```bash
-npm install
-npm run build
-```
+La base de datos MySQL de AlwaysData quedo migrada y poblada con:
 
+- 6 usuarios.
+- 2 administradores.
+- 4 clientes.
+- 9 productos.
+- 5 categorias.
+- 5 etiquetas.
 
+## Conclusion
 
-## Resultado
-
-<img width="816" height="503" alt="Imagen1343543" src="https://github.com/user-attachments/assets/223058ae-94b7-431c-816e-2e67aa7cf6f0" />
-
+El proyecto InnovaTechShop ahora trabaja con una base de datos MySQL remota en AlwaysData. Se actualizo `.env`, se elimino la configuracion de SQLite en memoria para PHPUnit, se hicieron los seeders idempotentes y se agregaron los usuarios y productos solicitados. La base fue migrada y poblada correctamente con Laravel.

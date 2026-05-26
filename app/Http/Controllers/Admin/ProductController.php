@@ -35,10 +35,12 @@ class ProductController extends Controller
 
         if ($request->hasFile('image')) {
             $validated['image_path'] = $request->file('image')->store('products', 'public');
+        } elseif ($request->filled('image_url')) {
+            $validated['image_path'] = $request->string('image_url')->trim()->toString();
         }
 
         $tags = $validated['tags'] ?? [];
-        unset($validated['tags'], $validated['image']);
+        unset($validated['tags'], $validated['image'], $validated['image_url']);
 
         $product = Product::create($validated);
         $product->tags()->sync($tags);
@@ -60,15 +62,21 @@ class ProductController extends Controller
         $validated['slug'] = Str::slug($validated['name']);
 
         if ($request->hasFile('image')) {
-            if ($product->image_path) {
+            if ($product->hasLocalImage()) {
                 Storage::disk('public')->delete($product->image_path);
             }
 
             $validated['image_path'] = $request->file('image')->store('products', 'public');
+        } elseif ($request->filled('image_url')) {
+            if ($product->hasLocalImage()) {
+                Storage::disk('public')->delete($product->image_path);
+            }
+
+            $validated['image_path'] = $request->string('image_url')->trim()->toString();
         }
 
         $tags = $validated['tags'] ?? [];
-        unset($validated['tags'], $validated['image']);
+        unset($validated['tags'], $validated['image'], $validated['image_url']);
 
         $oldPrice = $product->price;
         $product->fill($validated);
@@ -90,7 +98,7 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
-        if ($product->image_path) {
+        if ($product->hasLocalImage()) {
             Storage::disk('public')->delete($product->image_path);
         }
 
@@ -120,10 +128,16 @@ class ProductController extends Controller
             'description' => ['required', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
-            'image' => ['nullable', 'image', 'max:2048'],
+            'image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:10240'],
+            'image_url' => ['nullable', 'url', 'max:2048'],
             'is_active' => ['nullable', 'boolean'],
             'tags' => ['array'],
             'tags.*' => ['exists:tags,id'],
+        ], [
+            'image.uploaded' => 'La imagen local no se pudo subir. Revisa que pese menos que el limite de PHP o usa una URL de internet.',
+            'image.max' => 'La imagen local no debe pesar mas de 10 MB.',
+            'image.mimes' => 'La imagen local debe ser jpg, jpeg, png, webp o gif.',
+            'image_url.url' => 'La URL de imagen debe ser una direccion valida.',
         ]) + ['is_active' => false];
     }
 }
