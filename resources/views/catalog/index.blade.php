@@ -28,8 +28,8 @@
         @forelse($products as $product)
             <article class="flex flex-col overflow-hidden rounded border bg-white shadow-sm">
                 <a href="{{ route('products.show', $product) }}" class="block">
-                    @if($product->image_path)
-                        <img src="{{ Storage::url($product->image_path) }}" alt="{{ $product->name }}" class="h-52 w-full object-cover">
+                    @if($product->imageUrl())
+                        <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" class="h-52 w-full object-cover">
                     @else
                         <div class="flex h-52 w-full items-center justify-center bg-slate-200 text-sm font-semibold text-slate-500">Sin imagen</div>
                     @endif
