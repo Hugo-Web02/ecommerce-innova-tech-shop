@@ -411,6 +411,17 @@ La base de datos MySQL de AlwaysData quedo migrada y poblada con:
 - 5 categorias.
 - 5 etiquetas.
 
-## Conclusion
+## RESULTADOS VISUALES
+<img width="1200" height="555" alt="image" src="https://github.com/user-attachments/assets/681d0d7b-87fb-4051-b92f-12cc9a350baa" />
 
-El proyecto InnovaTechShop ahora trabaja con una base de datos MySQL remota en AlwaysData. Se actualizo `.env`, se elimino la configuracion de SQLite en memoria para PHPUnit, se hicieron los seeders idempotentes y se agregaron los usuarios y productos solicitados. La base fue migrada y poblada correctamente con Laravel.
+<img width="1131" height="547" alt="image" src="https://github.com/user-attachments/assets/766ed753-3b21-4222-ad42-66996e73591a" />
+
+<img width="1908" height="778" alt="image" src="https://github.com/user-attachments/assets/632518bc-87eb-43ee-8f93-2d3106f5b0f9" />
+
+<img width="1899" height="640" alt="image" src="https://github.com/user-attachments/assets/fcb95569-a326-482a-86e3-0903830dec6b" />
+
+<img width="579" height="865" alt="image" src="https://github.com/user-attachments/assets/5ca6ad8d-6ecb-4e29-9e15-3e6895b7f79f" />
+
+<img width="921" height="502" alt="image" src="https://github.com/user-attachments/assets/02160d1c-e84c-4837-8727-6828c1db226f" />
+
+
