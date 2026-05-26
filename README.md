@@ -101,6 +101,16 @@ Schema::create('products', function (Blueprint $table): void {
 
 El seeder se modifico para ser idempotente usando `updateOrCreate`. Esto evita errores por emails o slugs duplicados si se ejecuta varias veces.
 
+La estructura de seeders y factories quedo organizada asi:
+
+- `database/seeders/DatabaseSeeder.php`: se modifico para crear usuarios, categorias, etiquetas y productos iniciales.
+- `database/factories/UserFactory.php`: se modifico para incluir el campo `role` con valor por defecto `customer`.
+- `database/factories/CategoryFactory.php`: se creo para generar categorias de prueba.
+- `database/factories/TagFactory.php`: se creo para generar etiquetas de prueba.
+- `database/factories/ProductFactory.php`: se creo para generar productos asociados a una categoria.
+
+El seeder principal concentra los datos necesarios para levantar la tienda con informacion inicial. Primero crea usuarios, despues categorias, luego etiquetas y finalmente productos. Cada producto se guarda con una categoria asignada y se relaciona con etiquetas mediante la tabla pivote `product_tag`.
+
 Fragmento:
 
 ```php
@@ -129,6 +139,15 @@ $product = Product::updateOrCreate(
     ]
 );
 ```
+
+Resumen de datos generados por los seeders:
+
+- 2 usuarios administradores.
+- 4 usuarios clientes.
+- 5 categorias: Laptops, Componentes, Perifericos, Monitores y Accesorios.
+- 5 etiquetas: Gaming, Oferta, Nuevo, Productividad y Envio rapido.
+- 9 productos con categoria asignada.
+- Relaciones entre productos y etiquetas mediante `product_tag`.
 
 ## Usuarios creados
 
@@ -336,6 +355,21 @@ DELETE /admin/products/{product} Admin\ProductController@destroy
 El proyecto conserva pruebas con PHPUnit. La configuracion de PHPUnit ya no fuerza SQLite en memoria, por lo que hereda la conexion definida en `.env`.
 
 Importante: al usar MySQL real en PHPUnit, se debe tener cuidado con pruebas que refrescan la base de datos. Lo recomendable en un proyecto real seria usar una base MySQL separada exclusivamente para testing.
+
+## Pruebas manuales realizadas
+
+Durante la revision manual del proyecto se verifico lo siguiente:
+
+- Los productos generados por el seeder se muestran correctamente en el catalogo principal.
+- El catalogo carga productos con su categoria, precio, stock y estado activo.
+- La vista de detalle de producto funciona usando el `slug` del producto en la URL.
+- El login funciona para usuarios administradores y clientes.
+- Los clientes pueden navegar el catalogo, agregar productos al carrito y avanzar al checkout.
+- Solo los usuarios con rol `admin` pueden acceder a la gestion de productos en `/admin/products`.
+- El panel administrativo permite editar productos existentes.
+- Se verifico la carga de imagen local desde el formulario de producto.
+- Se agrego y verifico un segundo campo para cargar imagenes mediante URL de internet.
+- El carrito calcula subtotal, IVA y total.
 
 ## Comandos utiles
 
