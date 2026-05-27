@@ -446,8 +446,6 @@ cmds = [
 cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"
 ```
 
-En Railway se recomienda eliminar la variable personalizada `NIXPACKS_BUILD_CMD` del Raw Editor, porque esa variable puede sobrescribir las fases del repositorio y usa `npm install --production`, lo cual no instala Vite porque Vite esta en `devDependencies`.
-
 Variables recomendadas en Railway:
 
 ```env
@@ -504,4 +502,11 @@ La base de datos MySQL de AlwaysData quedo migrada y poblada con:
 <img width="579" height="865" alt="image" src="https://github.com/user-attachments/assets/5ca6ad8d-6ecb-4e29-9e15-3e6895b7f79f" />
 
 <img width="921" height="502" alt="image" src="https://github.com/user-attachments/assets/02160d1c-e84c-4837-8727-6828c1db226f" />
+
+
+## Despliegue
+
+https://ecommerce-innova-tech-shop-production.up.railway.app/
+
+<img width="1470" height="997" alt="image" src="https://github.com/user-attachments/assets/abb49231-ca80-4534-af63-3003085605a4" />
 
