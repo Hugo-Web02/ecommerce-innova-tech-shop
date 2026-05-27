@@ -400,6 +400,87 @@ php artisan tinker
 ]
 ```
 
+## Despliegue en Railway
+
+Para desplegar en Railway se agregaron archivos de configuracion al repositorio:
+
+- `nixpacks.toml`: define las fases de instalacion, build y arranque para Nixpacks.
+- `railway.json`: indica que Railway debe usar Nixpacks y el archivo `nixpacks.toml`.
+- `.node-version`: fija Node 22 para que Vite 8 pueda compilar correctamente.
+- `composer.json`: incluye `config.platform.php = 8.3.31` para que Composer resuelva dependencias compatibles con el PHP 8.3 de Railway.
+
+El error original ocurria porque `composer.lock` tenia paquetes Symfony 8, por ejemplo `symfony/http-foundation v8`, que requieren PHP 8.4. Railway estaba usando PHP 8.3.31, por eso fallaba `composer install`.
+
+La solucion aplicada fue:
+
+```bash
+composer config platform.php 8.3.31
+composer update --with-all-dependencies --no-interaction
+```
+
+Esto actualizo `composer.lock` y bajo los paquetes Symfony a versiones 7.4 compatibles con PHP 8.3.
+
+Configuracion principal de `nixpacks.toml`:
+
+```toml
+[variables]
+COMPOSER_ALLOW_SUPERUSER = "1"
+NIXPACKS_PHP_ROOT_DIR = "/app/public"
+
+[phases.install]
+cmds = [
+    "composer install --no-dev --optimize-autoloader --no-interaction",
+    "npm ci --include=dev"
+]
+
+[phases.build]
+cmds = [
+    "npm run build",
+    "php artisan optimize",
+    "php artisan config:cache",
+    "php artisan route:cache",
+    "php artisan view:cache"
+]
+
+[start]
+cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"
+```
+
+En Railway se recomienda eliminar la variable personalizada `NIXPACKS_BUILD_CMD` del Raw Editor, porque esa variable puede sobrescribir las fases del repositorio y usa `npm install --production`, lo cual no instala Vite porque Vite esta en `devDependencies`.
+
+Variables recomendadas en Railway:
+
+```env
+APP_NAME=Laravel
+APP_ENV=production
+APP_KEY=base64:...
+APP_DEBUG=false
+APP_URL=https://ecommerce-innova-tech-shop-production.up.railway.app
+LOG_CHANNEL=stack
+LOG_STACK=single
+LOG_LEVEL=error
+
+DB_CONNECTION=mysql
+DB_HOST=mysql-hugo20271015.alwaysdata.net
+DB_PORT=3306
+DB_DATABASE=hugo20271015_innova_tech_shop
+DB_USERNAME=hugo20271015
+DB_PASSWORD=********
+
+SESSION_DRIVER=database
+QUEUE_CONNECTION=database
+CACHE_STORE=database
+FILESYSTEM_DISK=local
+```
+
+Notas importantes:
+
+- En Railway no se deben escribir comillas alrededor de los valores en el Raw Editor.
+- `APP_DEBUG` debe estar en `false` para produccion.
+- `APP_URL` debe usar `https`.
+- No ejecutar `php artisan test` contra la base real de produccion si las pruebas usan `RefreshDatabase`.
+- Las migraciones se ejecutan al iniciar el servicio con `php artisan migrate --force`.
+
 ## Resultado actual en MySQL
 
 La base de datos MySQL de AlwaysData quedo migrada y poblada con:
@@ -423,5 +504,4 @@ La base de datos MySQL de AlwaysData quedo migrada y poblada con:
 <img width="579" height="865" alt="image" src="https://github.com/user-attachments/assets/5ca6ad8d-6ecb-4e29-9e15-3e6895b7f79f" />
 
 <img width="921" height="502" alt="image" src="https://github.com/user-attachments/assets/02160d1c-e84c-4837-8727-6828c1db226f" />
-
 
