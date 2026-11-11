@@ -34,7 +34,7 @@ class UserController extends Controller
             'customerCount' => User::where('role', 'customer')->count(),
             'adminCount' => User::where('role', 'admin')->count(),
             'orderCount' => \App\Models\Order::count(),
-            'currency' => StoreSetting::query()->value('currency') ?: 'MXN',
+            'currency' => StoreSetting::option('currency', 'MXN'),
         ]);
     }
 

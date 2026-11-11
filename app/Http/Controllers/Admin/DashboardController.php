@@ -16,13 +16,13 @@ class DashboardController extends Controller
 {
     public function __invoke(): View
     {
-        $timezone = StoreSetting::query()->value('timezone') ?: 'America/Mexico_City';
+        $timezone = StoreSetting::option('timezone', 'America/Mexico_City');
         $startOfDay = Carbon::now($timezone)->startOfDay();
         $startOfDayUtc = $startOfDay->copy()->utc();
         $endOfDayUtc = $startOfDay->copy()->endOfDay()->utc();
 
         return view('admin.dashboard', [
-            'currency' => StoreSetting::query()->value('currency') ?: 'MXN',
+            'currency' => StoreSetting::option('currency', 'MXN'),
             'timezone' => $timezone,
             'salesToday' => Order::where('status', 'paid')->whereBetween('created_at', [$startOfDayUtc, $endOfDayUtc])->sum('total'),
             'ordersToday' => Order::whereBetween('created_at', [$startOfDayUtc, $endOfDayUtc])->count(),

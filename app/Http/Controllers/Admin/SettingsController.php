@@ -6,19 +6,37 @@ use App\Http\Controllers\Controller;
 use App\Models\StoreSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
     public function edit(): View
     {
+        if (! Schema::hasTable('store_settings')) {
+            $settings = (object) [
+                'store_name' => 'InnovaTechShop',
+                'email' => null,
+                'phone' => null,
+                'address' => null,
+                'timezone' => 'America/Mexico_City',
+                'currency' => 'MXN',
+            ];
+
+            return view('admin.settings.edit', ['settings' => $settings, 'migrationPending' => true]);
+        }
+
         $settings = StoreSetting::firstOrCreate(['id' => 1]);
 
-        return view('admin.settings.edit', compact('settings'));
+        return view('admin.settings.edit', ['settings' => $settings, 'migrationPending' => false]);
     }
 
     public function update(Request $request): RedirectResponse
     {
+        if (! Schema::hasTable('store_settings')) {
+            return back()->withErrors(['settings' => 'Para guardar la configuración, ejecuta primero la migración pendiente con php artisan migrate.']);
+        }
+
         $validated = $request->validate([
             'store_name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],

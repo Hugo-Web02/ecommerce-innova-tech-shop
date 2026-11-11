@@ -38,7 +38,7 @@ class ProductController extends Controller
             'inStockCount' => Product::where('stock', '>', 0)->count(),
             'outOfStockCount' => Product::where('stock', 0)->count(),
             'categoryCount' => Category::count(),
-            'currency' => StoreSetting::query()->value('currency') ?: 'MXN',
+            'currency' => StoreSetting::option('currency', 'MXN'),
         ]);
     }
 

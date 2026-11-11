@@ -29,7 +29,7 @@ class PaymentController extends Controller
 
         return view('admin.payments.index', [
             'payments' => $payments,
-            'currency' => StoreSetting::query()->value('currency') ?: 'MXN',
+            'currency' => StoreSetting::option('currency', 'MXN'),
             'totalSales' => Order::where('status', 'paid')->sum('total'),
             'paidCount' => Order::where('status', 'paid')->count(),
             'pendingCount' => Order::where('status', 'pending')->count(),

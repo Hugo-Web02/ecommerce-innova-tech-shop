@@ -1,5 +1,6 @@
 <x-layouts.app title="Configuración">
     <div class="mb-6"><p class="text-sm font-medium text-blue-700">Preferencias</p><h2 class="mt-1 text-2xl font-bold tracking-tight">Configuración</h2><p class="mt-1 text-sm text-slate-500">Datos de contacto, zona horaria y moneda de la tienda.</p></div>
+    @if($migrationPending)<div class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">La configuración se puede consultar con valores predeterminados, pero para guardarla necesitas ejecutar <code class="font-semibold">php artisan migrate</code> en la base de datos del proyecto.</div>@endif
     <form method="POST" action="{{ route('admin.settings.update') }}" class="max-w-4xl space-y-5">@csrf @method('PUT')
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div class="mb-5 border-b border-slate-100 pb-4"><h3 class="font-semibold">Información de la tienda</h3><p class="mt-1 text-xs text-slate-500">Datos generales que identifican al negocio.</p></div><div class="grid gap-5 md:grid-cols-2">
             <label class="block"><span class="text-sm font-medium">Nombre de la tienda</span><input name="store_name" value="{{ old('store_name', $settings->store_name ?: 'InnovaTechShop') }}" required class="mt-1 w-full rounded-lg border-slate-300"></label>
