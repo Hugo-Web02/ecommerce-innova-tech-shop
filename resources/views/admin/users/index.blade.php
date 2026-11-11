@@ -1,0 +1,16 @@
+<x-layouts.app title="Usuarios">
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p class="text-sm font-medium text-blue-700">Cuentas y clientes</p><h2 class="mt-1 text-2xl font-bold tracking-tight">Usuarios</h2><p class="mt-1 text-sm text-slate-500">Consulta clientes y cuentas administradoras.</p></div><a href="{{ route('admin.users.create') }}" class="rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800">+ Nuevo usuario</a></div>
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        @foreach([['Total usuarios', $userCount], ['Clientes', $customerCount], ['Administradores', $adminCount], ['Pedidos', $orderCount]] as [$label, $value])<article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-sm font-medium text-slate-500">{{ $label }}</p><p class="mt-3 text-2xl font-bold">{{ $value }}</p></article>@endforeach
+    </div>
+    <section class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <form method="GET" class="flex flex-wrap items-center gap-3 border-b border-slate-100 p-4"><input name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o correo..." class="min-w-48 flex-1 rounded-lg border-slate-200 text-sm"><select name="role" class="rounded-lg border-slate-200 text-sm"><option value="">Todos los roles</option><option value="customer" @selected(request('role') === 'customer')>Cliente</option><option value="admin" @selected(request('role') === 'admin')>Administrador</option></select><button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Filtrar</button></form>
+        <div class="overflow-x-auto"><table class="w-full min-w-[800px] text-left text-sm"><thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3">Usuario</th><th class="px-5 py-3">Rol</th><th class="px-5 py-3">Pedidos</th><th class="px-5 py-3">Total comprado</th><th class="px-5 py-3">Registro</th></tr></thead><tbody class="divide-y divide-slate-100">
+            @forelse($users as $user)
+                <tr class="hover:bg-slate-50/70"><td class="px-5 py-4"><div class="flex items-center gap-3"><span class="grid h-10 w-10 place-items-center rounded-full bg-blue-50 font-semibold text-blue-700">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span><div><p class="font-semibold">{{ $user->name }}</p><p class="text-xs text-slate-500">{{ $user->email }}</p></div></div></td><td class="px-5 py-4"><span @class(['rounded-full px-2.5 py-1 text-xs font-semibold', 'bg-violet-50 text-violet-700' => $user->role === 'admin', 'bg-slate-100 text-slate-700' => $user->role !== 'admin'])>{{ $user->role === 'admin' ? 'Administrador' : 'Cliente' }}</span></td><td class="px-5 py-4">{{ $user->orders_count }}</td><td class="px-5 py-4 font-medium">${{ number_format((float) ($user->orders_sum_total ?? 0), 2) }} {{ $currency }}</td><td class="px-5 py-4 text-slate-500">{{ $user->created_at->format('d/m/Y') }}</td></tr>
+            @empty
+                <tr><td colspan="5" class="px-5 py-12 text-center text-slate-500">No se encontraron usuarios.</td></tr>
+            @endforelse
+        </tbody></table></div><div class="border-t border-slate-100 px-5 py-4">{{ $users->links() }}</div>
+    </section>
+</x-layouts.app>

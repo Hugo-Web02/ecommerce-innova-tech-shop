@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\StoreSetting;
 use App\Models\Tag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,10 +17,28 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
-    public function index(): View
+    public function index(\Illuminate\Http\Request $request): View
     {
+        $products = Product::query()
+            ->with(['category', 'tags'])
+            ->when($request->filled('search'), function ($query) use ($request): void {
+                $search = $request->string('search')->trim()->toString();
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->when($request->filled('category'), fn ($query) => $query->where('category_id', $request->integer('category')))
+            ->when($request->filled('status'), fn ($query) => $query->where('is_active', $request->string('status')->toString() === 'active'))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
         return view('admin.products.index', [
-            'products' => Product::with(['category', 'tags'])->latest()->paginate(10),
+            'products' => $products,
+            'categories' => Category::orderBy('name')->get(),
+            'productCount' => Product::count(),
+            'inStockCount' => Product::where('stock', '>', 0)->count(),
+            'outOfStockCount' => Product::where('stock', 0)->count(),
+            'categoryCount' => Category::count(),
+            'currency' => StoreSetting::query()->value('currency') ?: 'MXN',
         ]);
     }
 
