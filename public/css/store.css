@@ -9,3 +9,58 @@ button,
 a {
     transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
 }
+
+html[data-theme='dark'] body {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme='dark'] .bg-white {
+    background-color: #111827 !important;
+}
+
+html[data-theme='dark'] .bg-slate-50 {
+    background-color: #0b1220 !important;
+}
+
+html[data-theme='dark'] .bg-blue-50,
+html[data-theme='dark'] .bg-indigo-50,
+html[data-theme='dark'] .bg-sky-50,
+html[data-theme='dark'] .bg-violet-50,
+html[data-theme='dark'] .bg-emerald-50,
+html[data-theme='dark'] .bg-amber-50,
+html[data-theme='dark'] .bg-red-50 {
+    background-color: #172554 !important;
+}
+
+html[data-theme='dark'] .text-slate-900,
+html[data-theme='dark'] .text-slate-800,
+html[data-theme='dark'] .text-slate-700,
+html[data-theme='dark'] .text-slate-600,
+html[data-theme='dark'] .text-slate-500 {
+    color: #cbd5e1 !important;
+}
+
+html[data-theme='dark'] .border-slate-100,
+html[data-theme='dark'] .border-slate-200,
+html[data-theme='dark'] .border-slate-300 {
+    border-color: #334155 !important;
+}
+
+html[data-theme='dark'] input,
+html[data-theme='dark'] select,
+html[data-theme='dark'] textarea {
+    background-color: #0f172a;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder {
+    color: #94a3b8;
+}
+
+html[data-theme='dark'] tr:hover,
+html[data-theme='dark'] a:hover {
+    color: #bfdbfe;
+}

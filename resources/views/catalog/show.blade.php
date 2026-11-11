@@ -1,10 +1,11 @@
 <x-layouts.app title="{{ $product->name }}">
+    @php($currency = \App\Models\StoreSetting::option('currency', 'MXN'))
     <section class="grid gap-8 md:grid-cols-2">
         <div class="overflow-hidden rounded border bg-white">
             @if($product->imageUrl())
                 <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" class="h-full min-h-96 w-full object-cover">
             @else
-                <div class="flex min-h-96 items-center justify-center bg-slate-200 font-semibold text-slate-500">Sin imagen</div>
+                <div class="flex min-h-96 items-center justify-center bg-slate-200 font-semibold text-slate-500">{{ __('No image') }}</div>
             @endif
         </div>
 
@@ -19,14 +20,14 @@
                 @endforeach
             </div>
 
-            <p class="mt-6 text-3xl font-bold">${{ number_format($product->price, 2) }}</p>
-            <p class="mt-1 text-sm text-slate-500">Disponibles: {{ $product->stock }}</p>
+            <p class="mt-6 text-3xl font-bold">{{ \App\Models\StoreSetting::formatCurrency($product->price, $currency) }}</p>
+            <p class="mt-1 text-sm text-slate-500">{{ __('Available') }}: {{ $product->stock }}</p>
 
             <form method="POST" action="{{ route('cart.store', $product) }}" class="mt-6 flex max-w-sm gap-3">
                 @csrf
                 <input name="quantity" type="number" min="1" max="{{ max($product->stock, 1) }}" value="1" class="w-24 rounded border-slate-300">
                 <button class="flex-1 rounded bg-blue-700 px-4 py-2 font-semibold text-white" @disabled($product->stock === 0)>
-                    Agregar al carrito
+                    {{ __('Add to cart') }}
                 </button>
             </form>
         </div>

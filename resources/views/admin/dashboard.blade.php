@@ -7,7 +7,7 @@
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([
-            ['Ventas de hoy', '$'.number_format((float) $salesToday, 2).' '.$currency, 'Ingresos de pedidos pagados', 'bg-blue-50 text-blue-700', '↗'],
+            ['Ventas de hoy', \App\Models\StoreSetting::formatCurrency($salesToday, $currency), 'Ingresos de pedidos pagados', 'bg-blue-50 text-blue-700', '↗'],
             ['Pedidos de hoy', number_format($ordersToday), 'Pedidos registrados', 'bg-indigo-50 text-indigo-700', '▤'],
             ['Productos', number_format($productCount), 'Productos en el catálogo', 'bg-sky-50 text-sky-700', '▦'],
             ['Clientes', number_format($customerCount), 'Cuentas de cliente', 'bg-violet-50 text-violet-700', '♙'],
@@ -24,7 +24,7 @@
             <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h3 class="font-semibold">Pedidos recientes</h3><p class="mt-1 text-xs text-slate-500">Últimos movimientos de la tienda</p></div><a href="{{ route('admin.payments.index') }}" class="text-sm font-semibold text-blue-700 hover:text-blue-900">Ver pagos</a></div>
             <div class="overflow-x-auto"><table class="w-full min-w-[560px] text-left text-sm"><thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3">Pedido</th><th class="px-5 py-3">Cliente</th><th class="px-5 py-3">Fecha</th><th class="px-5 py-3 text-right">Total</th></tr></thead><tbody class="divide-y divide-slate-100">
                 @forelse($recentOrders as $order)
-                    <tr><td class="px-5 py-3.5 font-semibold">#{{ $order->id }}</td><td class="px-5 py-3.5">{{ $order->user?->name ?? 'Usuario eliminado' }}</td><td class="px-5 py-3.5 text-slate-500">{{ $order->created_at->format('d/m/Y') }}</td><td class="px-5 py-3.5 text-right font-semibold">${{ number_format((float) $order->total, 2) }} {{ $currency }}</td></tr>
+                    <tr><td class="px-5 py-3.5 font-semibold">#{{ $order->id }}</td><td class="px-5 py-3.5">{{ $order->user?->name ?? 'Usuario eliminado' }}</td><td class="px-5 py-3.5 text-slate-500">{{ $order->created_at->format('d/m/Y') }}</td><td class="px-5 py-3.5 text-right font-semibold">{{ \App\Models\StoreSetting::formatCurrency($order->total, $currency) }}</td></tr>
                 @empty
                     <tr><td colspan="4" class="px-5 py-10 text-center text-slate-500">Aún no hay pedidos registrados.</td></tr>
                 @endforelse
