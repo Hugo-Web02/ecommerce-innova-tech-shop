@@ -33,11 +33,11 @@ class ProductController extends Controller
 
         return view('admin.products.index', [
             'products' => $products,
-            'categories' => Category::orderBy('name')->get(),
+            'categories' => Category::whereIn('slug', ['cervezas', 'combos', 'sin-alcohol'])->orderBy('name')->get(),
             'productCount' => Product::count(),
             'inStockCount' => Product::where('stock', '>', 0)->count(),
             'outOfStockCount' => Product::where('stock', 0)->count(),
-            'categoryCount' => Category::count(),
+            'categoryCount' => Category::whereIn('slug', ['cervezas', 'combos', 'sin-alcohol'])->count(),
             'currency' => StoreSetting::option('currency', 'MXN'),
         ]);
     }
@@ -129,8 +129,11 @@ class ProductController extends Controller
     private function formData(): array
     {
         return [
-            'categories' => Category::orderBy('name', 'asc')->get(),
-            'tags' => Tag::orderBy('name', 'asc')->get(),
+            'categories' => Category::whereIn('slug', ['cervezas', 'combos', 'sin-alcohol'])->orderBy('name', 'asc')->get(),
+            'tags' => Tag::whereIn('slug', [
+                'corona', 'equis-lager', 'victoria', 'pacifico', 'modelo', 'mega-1-2-l',
+                '1-4-l', 'lata-355-ml', '1-2-l', 'caguama-940-ml', 'six-pack', '12-pack',
+            ])->orderBy('name', 'asc')->get(),
         ];
     }
 

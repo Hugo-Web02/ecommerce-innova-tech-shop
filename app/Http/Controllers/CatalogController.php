@@ -38,8 +38,11 @@ class CatalogController extends Controller
 
         return view('catalog.index', [
             'products' => $products,
-            'categories' => Category::orderBy('name')->get(),
-            'tags' => Tag::orderBy('name')->get(),
+            'categories' => Category::whereIn('slug', ['cervezas', 'combos', 'sin-alcohol'])->orderBy('name')->get(),
+            'tags' => Tag::whereIn('slug', [
+                'corona', 'equis-lager', 'victoria', 'pacifico', 'modelo', 'mega-1-2-l',
+                '1-4-l', 'lata-355-ml', '1-2-l', 'caguama-940-ml', 'six-pack', '12-pack',
+            ])->orderBy('name')->get(),
         ]);
     }
 
