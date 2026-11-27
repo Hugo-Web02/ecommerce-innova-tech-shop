@@ -6,13 +6,37 @@
         @endforeach
     </div>
     <section class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <form method="GET" class="flex flex-wrap items-center gap-3 border-b border-slate-100 p-4"><input name="search" value="{{ request('search') }}" placeholder="Buscar por pedido o cliente..." class="min-w-48 flex-1 rounded-lg border-slate-200 text-sm"><select name="status" class="rounded-lg border-slate-200 text-sm"><option value="">Todos los estados</option>@foreach(['paid' => 'Pagado', 'pending' => 'Pendiente', 'failed' => 'Fallido', 'refunded' => 'Reembolsado'] as $key => $label)<option value="{{ $key }}" @selected(request('status') === $key)>{{ $label }}</option>@endforeach</select><button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Filtrar</button></form>
-        <div class="overflow-x-auto"><table class="w-full min-w-[720px] text-left text-sm"><thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3">Pago / pedido</th><th class="px-5 py-3">Cliente</th><th class="px-5 py-3">Método</th><th class="px-5 py-3">Fecha</th><th class="px-5 py-3">Estado</th><th class="px-5 py-3 text-right">Total</th></tr></thead><tbody class="divide-y divide-slate-100">
-            @forelse($payments as $payment)
-                <tr class="hover:bg-slate-50/70"><td class="px-5 py-4"><p class="font-semibold">Pago #{{ $payment->id }}</p><p class="text-xs text-slate-500">Pedido #{{ $payment->id }}</p></td><td class="px-5 py-4"><p class="font-medium">{{ $payment->user?->name ?? 'Usuario eliminado' }}</p><p class="text-xs text-slate-500">{{ $payment->user?->email ?? '—' }}</p></td><td class="px-5 py-4 text-slate-600">Pago simulado</td><td class="px-5 py-4 text-slate-600">{{ $payment->created_at->format('d/m/Y H:i') }}</td><td class="px-5 py-4"><span @class(['rounded-full px-2.5 py-1 text-xs font-semibold', 'bg-emerald-50 text-emerald-700' => $payment->status === 'paid', 'bg-amber-50 text-amber-700' => $payment->status === 'pending', 'bg-red-50 text-red-700' => in_array($payment->status, ['failed', 'refunded']), 'bg-slate-100 text-slate-600' => !in_array($payment->status, ['paid', 'pending', 'failed', 'refunded'])])>{{ ['paid' => 'Pagado', 'pending' => 'Pendiente', 'failed' => 'Fallido', 'refunded' => 'Reembolsado'][$payment->status] ?? ucfirst($payment->status) }}</span></td><td class="px-5 py-4 text-right font-semibold">{{ \App\Models\StoreSetting::formatCurrency($payment->total, $currency ?? 'MXN') }}</td></tr>
-            @empty
-                <tr><td colspan="6" class="px-5 py-12 text-center text-slate-500">No hay pagos para mostrar.</td></tr>
-            @endforelse
-        </tbody></table></div><div class="border-t border-slate-100 px-5 py-4">{{ $payments->links() }}</div>
+        <form method="GET" class="flex flex-wrap items-center gap-3 border-b border-slate-100 p-4">
+            <input name="search" value="{{ request('search') }}" placeholder="Buscar por pedido o cliente..." class="min-w-48 flex-1 rounded-lg border-slate-200 text-sm">
+            <select name="status" class="rounded-lg border-slate-200 text-sm">
+                <option value="">Todos los estados</option>
+                @foreach(['paid' => 'Pagado', 'pending' => 'Pendiente', 'failed' => 'Fallido', 'expired' => 'Expirado', 'stock_conflict' => 'Revisión de inventario', 'payment_mismatch' => 'Revisión de pago', 'refunded' => 'Reembolsado'] as $key => $label)
+                    <option value="{{ $key }}" @selected(request('status') === $key)>{{ $label }}</option>
+                @endforeach
+            </select>
+            <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Filtrar</button>
+        </form>
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[960px] text-left text-sm">
+                <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3">Pago / pedido</th><th class="px-5 py-3">Cliente</th><th class="px-5 py-3">Entrega</th><th class="px-5 py-3">Método</th><th class="px-5 py-3">Fecha</th><th class="px-5 py-3">Estado</th><th class="px-5 py-3 text-right">Total</th></tr></thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($payments as $payment)
+                        @php($shippingAddress = $payment->shipping_details['address'] ?? [])
+                        <tr class="hover:bg-slate-50/70">
+                            <td class="px-5 py-4"><p class="font-semibold">Pedido #{{ $payment->id }}</p><p class="text-xs text-slate-500">{{ $payment->stripe_payment_intent_id ?: $payment->stripe_checkout_session_id ?: 'Stripe Checkout' }}</p></td>
+                            <td class="px-5 py-4"><p class="font-medium">{{ $payment->user?->name ?? 'Usuario eliminado' }}</p><p class="text-xs text-slate-500">{{ $payment->user?->email ?? '—' }}</p></td>
+                            <td class="max-w-64 px-5 py-4"><p class="font-medium">{{ $payment->shipping_details['name'] ?? 'Pendiente' }}</p><p class="text-xs text-slate-500">{{ collect([$shippingAddress['line1'] ?? null, $shippingAddress['line2'] ?? null, $shippingAddress['city'] ?? null, $shippingAddress['state'] ?? null, $shippingAddress['postal_code'] ?? null])->filter()->implode(', ') ?: '—' }}</p></td>
+                            <td class="px-5 py-4 text-slate-600">Stripe · tarjeta</td>
+                            <td class="px-5 py-4 text-slate-600">{{ $payment->created_at->format('d/m/Y H:i') }}</td>
+                            <td class="px-5 py-4"><span @class(['rounded-full px-2.5 py-1 text-xs font-semibold', 'bg-emerald-50 text-emerald-700' => $payment->status === 'paid', 'bg-amber-50 text-amber-700' => $payment->status === 'pending', 'bg-red-50 text-red-700' => in_array($payment->status, ['failed', 'refunded', 'stock_conflict', 'payment_mismatch']), 'bg-slate-100 text-slate-600' => !in_array($payment->status, ['paid', 'pending', 'failed', 'refunded', 'stock_conflict', 'payment_mismatch'])])>{{ ['paid' => 'Pagado', 'pending' => 'Pendiente', 'failed' => 'Fallido', 'expired' => 'Expirado', 'stock_conflict' => 'Revisión de inventario', 'payment_mismatch' => 'Revisión de pago', 'refunded' => 'Reembolsado'][$payment->status] ?? ucfirst($payment->status) }}</span></td>
+                            <td class="px-5 py-4 text-right font-semibold">{{ \App\Models\StoreSetting::formatCurrency($payment->total, $payment->currency ?? ($currency ?? 'MXN')) }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="7" class="px-5 py-12 text-center text-slate-500">No hay pagos para mostrar.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="border-t border-slate-100 px-5 py-4">{{ $payments->links() }}</div>
     </section>
 </x-layouts.app>

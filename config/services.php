@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'shipping_countries' => array_filter(array_map('trim', explode(',', env('STRIPE_SHIPPING_COUNTRIES', 'MX')))),
+    ],
+
 ];

@@ -2,7 +2,7 @@
     @php($currency = \App\Models\StoreSetting::option('currency', 'MXN'))
     <section class="mb-8">
         <h1 class="text-3xl font-bold">{{ __('Catalog of technology') }}</h1>
-        <p class="mt-2 max-w-2xl text-slate-600">{{ __('Computer products, accessories and peripherals ready to buy with simulated checkout.') }}</p>
+        <p class="mt-2 max-w-2xl text-slate-600">{{ __('Beer store subtitle') }}</p>
     </section>
 
     <form method="GET" action="{{ route('home') }}" class="mb-8 grid gap-3 rounded border bg-white p-4 shadow-sm md:grid-cols-5">

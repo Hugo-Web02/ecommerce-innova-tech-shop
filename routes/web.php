@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [CatalogController::class, 'index'])->name('home');
@@ -29,6 +30,7 @@ Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/{product}', [CartController::class, 'store'])->name('cart.store');
 Route::patch('/cart/{product}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/{product}', [CartController::class, 'destroy'])->name('cart.destroy');
+Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/account/profile', [AccountController::class, 'profile'])->name('account.profile');
@@ -40,6 +42,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.create');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+    Route::get('/checkout/cancelled', [CheckoutController::class, 'cancelled'])->name('checkout.cancelled');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function (): void {

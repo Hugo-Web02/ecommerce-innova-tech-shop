@@ -9,7 +9,11 @@ class Order extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'subtotal', 'tax', 'total', 'status'];
+    protected $fillable = [
+        'user_id', 'subtotal', 'tax', 'total', 'currency', 'status',
+        'stripe_checkout_session_id', 'stripe_payment_intent_id', 'shipping_details',
+        'inventory_reserved',
+    ];
 
     protected function casts(): array
     {
@@ -17,6 +21,8 @@ class Order extends Model
             'subtotal' => 'decimal:2',
             'tax' => 'decimal:2',
             'total' => 'decimal:2',
+            'shipping_details' => 'array',
+            'inventory_reserved' => 'boolean',
         ];
     }
 
